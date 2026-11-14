@@ -80,14 +80,17 @@ def clamp_to_grid(price):
 def trailing_mean(prices, window):
     """Arithmetic mean of the last ``window`` closes (or all, if fewer).
 
-    Every close that enters the mean must be a finite number: a single
-    corrupt (null / non-numeric) entry must fail loudly instead of
-    silently poisoning the forecast with a NaN.
+    Every close that enters the mean must be a finite, positive number:
+    a single corrupt (null / non-numeric / non-positive) entry must fail
+    loudly instead of silently poisoning the forecast with a NaN or a
+    mean dragged down by a bogus price.
     """
     tail = prices[-window:] if len(prices) > window else prices
     for value in tail:
         if not isinstance(value, (int, float)) or not math.isfinite(value):
             raise ValueError("non-finite price in trailing window: %r" % (value,))
+        if value <= 0:
+            raise ValueError("non-positive price in trailing window: %r" % (value,))
     return sum(tail) / len(tail)
 
 
